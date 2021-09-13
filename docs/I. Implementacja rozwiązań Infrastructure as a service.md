@@ -1,15 +1,15 @@
-# I. Implementacja rozwiązań Infrastructure as a service
+# I. Implementacja rozwiązań Infrastructure as a service część 1 - Maszyny wirtualne
 
 **Implementacja rozwiązań IaaS** jest częścią tematu **Develop Azure compute solutions** egzaminu **AZ-204**.
 
 Umiejętności badane w tej części egzaminu:
-* Udostępnianie maszyn wirtualnych (**VM**)
+* Uruchamianie maszyn wirtualnych (**VM**)
 * Konfiguracja, walidacja i wdrażanie **szablonów ARM**
 * Konfiguracja obrazów kontenerów 
 * Publikacja obrazów w **Azure Container Registry**
 * Uruchamianie kontenerów za pomocą **Azure Container Instance**
 
-## 1. Udostępnianie maszyn wirtualnych
+## 1. Uruchamianie maszyn wirtualnych
 Zacznijmy od ogólnego przeglądu tego, z czego składa się maszyna wirtualna.
 Maszyny wirtualne platformy Azure (**VMs**) są wdrażane w **grupach zasobów** i znajdują się w **regionach** platformy Azure. Zwykle chcemy umieścić maszynę wirtualną w **regionie** blisko aplikacji lub użytkowników, którzy będą korzystać z usług wdrożonych na tej maszynie wirtualnej.
 Podczas budowania maszyny wirtualnej wybieramy spośród wstępnie skonfigurowanych **rozmiarów maszyn wirtualnych** na podstawie liczby rdzeni procesora, ilości pamięci RAM, a także różnych możliwości wydajności dysku. Wybrany rozmiar zależy od obciążenia wdrażanego na tej maszynie wirtualnej. Rozmiar maszyny wirtualnej można łatwo zaktualizować lub obniżyć po wdrożeniu maszyny wirtualnej. 
@@ -23,7 +23,7 @@ Podczas tworzenia maszyny wirtualnej na platformie Azure mamy do dyspozycji kilk
 * **Azure PowerShell (Az Module)**
 * **Azure ARM Templates**
 
-### 1.1 Tworzenie maszyny wirtualnej w portalu Azure
+### 2 Tworzenie maszyny wirtualnej w portalu Azure
 Aby utworzyć **maszynę wirtualną** w portalu Azure należy przejść do usługi **Maszyny Wirtualne** i wcisnąć guzik **utwórz maszynę wirtualną**.
 Na stronie tworzenie maszyny wirtualnej pierwsza sekcja to informacje **Podstawowe** o tworzonej maszynie. Na górze strony można zobaczyć, że istnieją dodatkowe sekcje dotyczące dysków, sieci, zarządzania itp. Te sekcje umożliwiają tworzenie bardziej niestandardowych konfiguracji, takich jak dodawanie dodatkowych dysków lub dodawanie maszyny wirtualnej do istniejącej sieci wirtualnej, a nawet tworzenie bardziej szczegółowych reguł zabezpieczeń sieci.
 
@@ -68,7 +68,7 @@ Dane do wprowadzenia w sekcji **Podstawowe**:
 Aby połączyć się do maszyny za pomocą protokołu RDP wybieramy guzik **Połącz** z górnego menu na stronie detali maszyny wirtualnej i pobieramy plik RDP:
 ![](pic/vm-portal-vm-view-rdp-connect.png)
 
-### 1.2 Tworzenie maszyny wirtualnej w kodzie
+### 3 Tworzenie maszyny wirtualnej w kodzie
 Jako programiści jesteś przyzwyczajony do pisania kodu do tworzenia aplikacji. Na platformie Azure istnieje możliwość tworzenia maszyn wirtualnych i infrastruktury przy użyciu kodu. A wdrażanie infrastruktury, takiej jak maszyny wirtualne z kodem, zapewnia Twojej organizacji dużą wartość:
 * wdrażanie maszyn wirtualnych z kodem zwiększa spójność wdrożeń i tworzenia maszyn wirtualnych, dzięki czemu można za każdym razem tworzyć wiele maszyn wirtualnych w ten sam sposób. 
 * jak każdy inny kod, kod infrastruktury można umieścić w repozutorium kodu źródłowego takim jak np. GIT. 
@@ -76,13 +76,26 @@ Jako programiści jesteś przyzwyczajony do pisania kodu do tworzenia aplikacji.
 * dzięki wdrożeniom w kodzie, możesz wykorzystać ten kod do konstruowania podobnych środowisk takich jak DEV/TEST/STG.
 
 Niezależnie od tego, czy tworzymy maszynę wirtualną za pomocą interfejsu wiersza polecenia platformy Azure, czy programu Azure PowerShell z modułem Az, proces tworzenia maszyny wirtualnej w kodzie składa się z tych samych kroków:
-1. Tworzenie grupy zasobów (resource group)
-2. Tworzenie maszyny wirtualnej (VM)
-3. Udostępnienie portu dostępu zdalnego (w systemie Windows jest to port TCP 3389. W przypadku RDP i Linux jest to port TCP 22 dla SSH.)
-4. Pobranie publicznego adresu IP
+1. Logowanie i ustawienie aktywnej subskrypcji
+2. Tworzenie grupy zasobów (resource group)
+3. Tworzenie maszyny wirtualnej (VM)
+4. Udostępnienie portu dostępu zdalnego (w systemie Windows jest to port TCP 3389. W przypadku RDP i Linux jest to port TCP 22 dla SSH.)
+5. Pobranie publicznego adresu IP
 
-#### a) Tworzenie maszyny wirtualnej za pomocą Azure CLI
-1. Tworzenie grupy zasobów
+#### 3.1 Tworzenie maszyny wirtualnej za pomocą Azure CLI
+1. Logowanie i ustawienie aktywnej subskrypcji
+
+Za pomocą polecenia `az login` logujemy się na konto Azure. Po uruchomieniu polecenia uruchomi się przeglądarka internetowa z dialogiem logowania do konta Azure.
+
+Za pomocą polecenia `az account set --subscription` ustawiamy aktywną subskrypcję.
+
+```powershell
+#Login and set a subscription 
+az login
+az account set --subscription "<SUBSCRIPTION_NAME>"
+```
+
+2. Tworzenie grupy zasobów
 
 Możemy utworzyć grupę zasobów za pomocą polecenia Azure CLI: `az group create`. Nadajemy tej grupie zasobów nazwę, wybieramy lokalizację w której chcemy utworzyć grupę zasobów. Możemy też oczywiście wdrożyć maszynę wirtualną w już istniejącej grupie zasobów.
 
@@ -92,7 +105,7 @@ az group create \
 --location "westeurope"
 ```
 
-2. Tworzenie maszyny wirtualnej
+3. Tworzenie maszyny wirtualnej
 Możemy utworzyć maszynę wirtualną za pomocą polecenia Azure CLI: `az vm create`. Jako parametry dodajemy nazwę grupy zasobów, nazwę maszyny wirtualnej, obraz systemu oraz dane uwierzytelniające służące do zalogowania się do systemu. Procedura różni się nieco dla systemów Windows i Linux.
 
 **Windows:**
@@ -126,7 +139,7 @@ az vm create \
 
 Powyższe dwa przykłady pokaują minimalne parametry potrzebne do utworzenia maszyny wirtualnej za pomocą Azure CLI. Dostępnych jest wiele innych opcji, takich jak dołączenie maszyny wirtualnej do już istniejącej sieci wirtualnej lub sieciowej grupy zabezpieczeń.
 
-3. Udostępnienie portu dostępu zdalnego
+4. Udostępnienie portu dostępu zdalnego
 
 Polecenie otwierające port dostępu zdalnego to `az vm open-port`. Należy określić nazwę grupy zasobów, nazwę maszyny wirtualnej oraz port, który chcemy otworzyć. 
 To polecenie doda regułę otwierania portu (3389 dla Windows lub 22 dla SSH w Linuxie) w sieciowej grupie zabezpieczeń, do której jest dołączona jest maszyna wirtualna. 
@@ -147,7 +160,7 @@ az vm open-port \
 --port "22"
 ```
 
-4. Pobranie publicznego adresu IP
+5. Pobranie publicznego adresu IP
 Aby pobrać publiczny adres IP za pomocą Azure CLI używamy polecenia `az vm list-ip-addresses`. Za pomocą tego polecenia określasz nazwę grupy zasobów i nazwę maszyny wirtualnej. Spowoduje to wyświetlenie publicznego adresu IP powiązanego z określoną maszyną wirtualną.
 
 ```powershell
@@ -155,3 +168,68 @@ az vm list-ip-addresses \
 --resource-group "iaas-demo-rg" \
 --name "iaas-demo-win"
 ```
+
+#### Kod demo:
+[create-win-vm-by-azure-cli](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/create-win-vm-by-azure-cli.ps1)
+
+[create-linux-vm-by-azure-cli](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/create-linux-vm-by-azure-cli.ps1)
+
+#### 3.2 Tworzenie maszyny wirtualnej za pomocą Azure Power Shell
+Logicznie proces tworzenia maszyny wirtualnej jest taki sam jak dla Azure CLI.
+
+1. Logowanie i ustawienie aktywnej subskrypcji:
+
+Za pomocą polecenia `Connect-AzAccount` logujemy się na konto Azure. Po uruchomieniu polecenia uruchomi się przeglądarka internetowa z dialogiem logowania do konta Azure.
+
+Za pomocą polecenia `Set-AzContext -SubscriptionName` ustawiamy aktywną subskrypcję.
+
+```powershell
+#Login and set a subscription
+Connect-AzAccount -SubscriptionName 'BizSpark'
+Set-AzContext -SubscriptionName 'BizSpark'
+```
+
+2. Tworzenie grupy zasobów
+
+Grupę zasobów tworzymy za pomocą polecenia: `New-AzResourceGroup`. Nadajemy tej grupie zasobów nazwę i wybieramy lokalizację.
+
+```powershell
+#Create a Resource Group
+New-AzResourceGroup -Name "iaas-demo-rg" -Location "WestEurope"
+```
+
+3. Tworzenie maszyny wirtualnej i udostępnienie portu dostępu zdalnego
+
+Krokiem wymaganym do utworzenia maszyny wirtualnej w programie PowerShell jest utworzenie obiektu *PSCredential*, który będzie zawierał nazwę użytkownika i hasło używane do poświadczeń konta administratora lokalnego na wdrażanej maszynie wirtualnej. Obiekt *PSCredential* definiujemy z nazwą użytkownika i hasłem skonwertowanym na bezpieczny ciąg jako parametrami wejściowymi. Aby skonwertować hasło na bezpieczny ciąg używamy polecenia `ConvertTo-SecureString`.
+
+Polecenie *New-AzVM* tworzy maszynę wirtualną na platformie Azure. Jako parametry definiujemy nazwę grupy zasobów, nazwę maszyny wirtualnej i Credential.
+W ramach procesu tworzenia maszyny wirtualnej, za pomocą parametru *OpenPorts*, możemy określić porty które mają być otwarte na maszynie wirtualnej.
+
+```powershell
+#Create a VM credentials
+$username = 'iaasdemoadmin'
+$password = ConvertTo-SecureString 'iaasdemoadmin123$%^' -AsPlainText -Force
+$WindowsCred = New-Object System.Management.Automation.PSCredential ($username, $password)
+
+#Create a Windows VM
+New-AzVM `
+    -ResourceGroupName 'iaas-demo-rg' `
+    -Name 'iaas-demo-win' `
+    -Image 'Win2019Datacenter' `
+    -Credential $WindowsCred `
+    -OpenPorts 3389
+```
+
+5. Pobranie publicznego adresu IP
+
+Aby pobrać publiczny adres IP można użyć polecenia `Get‑AzPublicIpAddress`, a następnie określić nazwę grupy zasobów i nazwę maszyny wirtualnej i użyć `Select-Object`, aby zwrócić tylko pole `IpAddress` ze zwróconego obiektu.
+
+```powershell
+#Get the Public IP 
+Get-AzPublicIpAddress `
+    -ResourceGroupName 'iaas-demo-rg' `
+    -Name 'iaas-demo-win' | Select-Object IpAddress
+```
+
+#### Kod demo:
+[create-win-vm-by-azure-powershell](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/create-win-vm-by-azure-powershell.ps1)
