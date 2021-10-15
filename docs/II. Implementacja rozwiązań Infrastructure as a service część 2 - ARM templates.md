@@ -59,7 +59,9 @@ Więcej na temat struktury i składni mozna przeczytać na stronie: [Struktura i
 Aby utworzyć **szablon ARM**, zamiast tworzyć go od początku ręcznie, możemy go utworzyć w **Azure Portal**. Następnie możemy go pobrać, dodać do biblioteki lub wdrożyć.
 
 Aby utworzyć **szablon ARM**, zaczynamy od utworzenia maszyny wirtualnej w **Azure Portal**, ale zamiast tworzyć maszynę wirtualną, eksportujemy **szablon ARM** dla tego wdrożenia (proces ten jest podobny dla większości zasobów na platformie *Azure*).
-Proces tworzenia maszyny wirtualnej w **Azure Portal** był opisany w poprzednim wpisie z tej serii (*I. Implementacja rozwiązań Infrastructure as a service część 1 - Maszyny wirtualne*). Po kliknięciu guzika **Przeglądanie + tworzenie**, zamiast kliknąć guzik **Utwórz** wybieramy **Pobierz szablon do automatyzacji**. Spowoduje to utworzenie plików JSON szablonu i parametrów potrzebnych do wdrożenia opartego na szablonie ARM dla właśnie skonfigurowanej maszyny wirtualnej.
+Proces tworzenia maszyny wirtualnej w **Azure Portal** był opisany w poprzednim wpisie z tej serii ([Implementacja-rozwiazan-infrastructure-as-a-service-czesc-1-maszyny-wirtualne](http://www.smsoft.pl/blog/i-implementacja-rozwiazan-infrastructure-as-a-service-czesc-1-maszyny-wirtualne/)). 
+
+Po kliknięciu guzika **Przeglądanie + tworzenie**, zamiast kliknąć guzik **Utwórz** wybieramy **Pobierz szablon do automatyzacji**. Spowoduje to utworzenie plików JSON szablonu i parametrów potrzebnych do wdrożenia opartego na szablonie ARM dla właśnie skonfigurowanej maszyny wirtualnej.
 
 Na tym ekranie w górnym menu możemy kliknąć **Pobierz**, aby pobrać pliki szablonów i parametrów, możemy kliknąć **Dodaj do biblioteki**, aby dodać je do biblioteki w celu dalszych wdrożeń, lub możemy je wdrożyć bezpośrednio z tego miejsca za pomocą guzika **Wdróż**. Dodatkowo możemy zbadać utworzone pliki w oknie poniżej:
 
