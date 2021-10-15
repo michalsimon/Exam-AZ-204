@@ -159,7 +159,7 @@ Na tym ekranie w górnym menu możemy kliknąć **Pobierz**, aby pobrać pliki s
 
 
 ## 5. Demo - wdrożenie szablonu ARM maszyny wirtualnej:
-Plik ze skryptem wdrożenia dostępny jest tutaj: [template.json](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/deploy-win-vm-arm-template-by-azure-powershell.ps1)
+Plik ze skryptem wdrożenia dostępny jest tutaj: [deploy-win-vm-arm-template-by-azure-powershell.ps1](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/deploy-win-vm-arm-template-by-azure-powershell.ps1)
 
 Przed wdrożeniem należy ustawić parametr **adminPassword** w pliku **parameters.json**.
 ```powershell
