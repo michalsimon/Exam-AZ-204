@@ -3,7 +3,7 @@
 **Implementacja rozwiązań IaaS** jest częścią tematu **Develop Azure compute solutions** egzaminu **AZ-204**.
 
 Umiejętności badane w tej części egzaminu:
-* Uruchamianie maszyn wirtualnych (**VM**)
+* **Uruchamianie maszyn wirtualnych (VM)**
 * Konfiguracja, walidacja i wdrażanie **szablonów ARM**
 * Konfiguracja obrazów kontenerów 
 * Publikacja obrazów w **Azure Container Registry**

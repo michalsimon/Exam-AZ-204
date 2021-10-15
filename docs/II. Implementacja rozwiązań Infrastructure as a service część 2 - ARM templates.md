@@ -1,30 +1,35 @@
 # II. Implementacja rozwiązań Infrastructure as a service część 2 - ARM templates
 
+**Implementacja rozwiązań IaaS** jest częścią tematu **Develop Azure compute solutions** egzaminu **AZ-204**.
 
-## II. Configure, validate, and deploy ARM templates
-An ARM template is a JSON‑formatted file that is a configuration document that defines what resources you want deployed in Azure with their configurations. You can create any resource with an ARM template.
-ARM templates are a building block for deployment automation. Using ARM templates, you can parameterize the configuration elements for resources defined in an ARM template. You can use parameters for commonly changed configuration elements such as virtual machine names, virtual network names, storage account names, and more. You can then use that same ARM template repeatedly to deploy the environment defined in the template, but using different parameters to customize each environment at deployment time. So for example, having one set of parameters for production, another for QA, and another for dev, still using the same ARM template, but with different parameters, providing consistency to your deployments.
+Umiejętności badane w tej części egzaminu:
+* Uruchamianie maszyn wirtualnych (**VM**)
+* **Konfiguracja, walidacja i wdrażanie **szablonów ARM****
+* Konfiguracja obrazów kontenerów 
+* Publikacja obrazów w **Azure Container Registry**
+* Uruchamianie kontenerów za pomocą **Azure Container Instance**
 
-From a process standpoint, you create an ARM template and then an ARM template is submitted to Azure Resource Manager for deployment using the tools that we focus on in this module, the Azure portal, Azure CLI, and Azure PowerShell. Once the ARM template is deployed, it affects the changes defined inside the ARM template in Azure, changes such as creating the resources, edit existing resources or their properties or even deleting resources. When it comes to creating ARM templates, you can build and export an ARM template from the Azure portal or you can write your own manually. Additionally, you can start from the Quickstart library, which is a collection of community templates available in the Azure portal in the Custom deployment blade.
+## 1. Szablony ARM
+**Szablon ARM** to plik w formacie *JSON*, który jest dokumentem konfiguracyjnym definiującym zasoby, które mają zostać wdrożone na *platformie Azure* wraz z ich konfiguracjami. Za pomocą **szablonu ARM** można utworzyć dowolny zasób.
+**Szablony ARM** są podstawowym elementem automatyzacji wdrażania infrastruktury *Azure*.
 
-When you deploy an ARM template, Resource Manager receives that template, formatted as JSON, and then converts the template into REST API operations. This means that you can use many different tools to deploy your ARM templates, including the Azure portal, Azure CLI, Azure PowerShell with the Az module, REST API endpoints directly, and, of course, Azure Cloud Shell.
+Korzystając z **szablonów ARM**, można sparametryzować elementy konfiguracji dla zasobów zdefiniowanych w szablonie. Można użyć parametrów dla często zmienianych elementów konfiguracji, takich jak nazwy maszyn wirtualnych, nazwy sieci wirtualnych itd. Można następnie użyć tego samego **szablonu ARM** wielokrotnie używając różnych parametrów, aby wdrożyć różne środowiska np. inny zestaw parametrów dla produkcji i inny dla QA.
 
-### ARM templates:
-* JSON file that defines your resources
-* Building block for automation
-* Templates are submitted to ARM for provisioning
-* Export a ARM Template in Azure Portal
-* Write your own
-* Deploy from the Quickstart template library
+**Szablon ARM** można skompilować i wyeksportować z *portalu Azure* lub napisać ręcznie. Ponadto można zacząć od kolekcji szablonów szybkiego startu dostępnych w *Azure Portal* w bloku wdrażania niestandardowego.
 
-### Deploying ARM Templates:
-* Azure Portal
-* Azure CLI
-* PowerShell (Az Module)
-* REST API
-* Azure Cloud Shell
+## 2. Wdrażanie szablonów ARM:
+Po utworzeniu **szablonu ARM** przesyłamy go do usługi **Azure Resource Manager**. **Resource Manager** odbiera szablon w postaci pliku *JSON*, a następnie konwertuje go na operacje interfejsu *REST API*.
+W celu wdrożenia możemy użyć różnych narzędzi a w tym: 
+* **Azure Portal**
+* **Azure CLI**
+* **PowerShell (Az Module)**
+* **REST API**
+* **Azure Cloud Shell**
 
-### ARM Template Format
+## 3. Format szablonu ARM
+
+W swojej najprostszej strukturze szablon składa się z następujących elementów:
+
 ```powershell
 {
 "$schema": "https://schema.management.azure.com/schemas/2019-04-01/.
@@ -39,33 +44,46 @@ deploymentTemplate.json#",
 }
 ```
 
-[Structure and syntax of ARM templates](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/syntax)
+* **$schema** - Lokalizacja schematu JSON opisującego wersję języka szablonu.
+* **contentVersion** - Wersja szablonu (np. 1.0.0.0). Można użyć dowolną wartość, aby udokumentować znaczące zmiany w szablonie.
+* **apiProfile** - Wersja interfejsu API, która służy jako kolekcja wersji interfejsu API dla typów zasobów. Użyj tej wartości, aby uniknąć konieczności określania wersji interfejsu API dla każdego zasobu w szablonie. 
+* **parameters** - Wartości parametrów podawane podczas wdrażania w celu dostosowania zasobów.
+* **variables** - Wartości używane jako fragmenty JSON w szablonie w celu uproszczenia wyrażeń języka szablonu.
+* **functions** - Funkcje zdefiniowane przez użytkownika, które są dostępne w szablonie.
+* **resources** - Typy zasobów, które są wdrażane lub aktualizowane w grupie zasobów lub subskrypcji.
+* **outputs** - Wartości zwracane po wdrożeniu.
 
-* **$schema** - Location of the JSON schema file that describes the version of the template language.
-* **contentVersion** - Version of the template (such as 1.0.0.0). You can provide any value for this element. Use this value to document significant changes in your template.
-* **apiProfile** - An API version that serves as a collection of API versions for resource types. Use this value to avoid having to specify API versions for each resource in the template.
-* **parameters** - Values that are provided when deployment is executed to customize resource deployment.
-* **variables** - Values that are used as JSON fragments in the template to simplify template language expressions.
-* **functions** - User-defined functions that are available within the template.
-* **resources** - Resource types that are deployed or updated in a resource group or subscription.
-* **outputs** - Values that are returned after deployment.
+Więcej na temat struktury i składni mozna przeczytać na stronie: [Struktura i składnia szablonu ARM](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/syntax)
 
-##### Demo:
-To create ARM template we can download it in Azure Portal instead of Create resource. Then we can download template, add to library or deploy to Azure.
-![](images/vm-create-arm-template.png)
+## 4. Demo - Pobranie szablonu ARM maszyny wirtualnej z portalu Azure:
+Aby utworzyć **szablon ARM**, zamiast tworzyć go od początku ręcznie, możemy go utworzyć w **Azure Portal**. Następnie możemy go pobrać, dodać do biblioteki lub wdrożyć.
 
-Schema:
+Aby utworzyć **szablon ARM**, zaczynamy od utworzenia maszyny wirtualnej w **Azure Portal**, ale zamiast tworzyć maszynę wirtualną, eksportujemy **szablon ARM** dla tego wdrożenia (proces ten jest podobny dla większości zasobów na platformie *Azure*).
+Proces tworzenia maszyny wirtualnej w **Azure Portal** był opisany w poprzednim wpisie z tej serii (*I. Implementacja rozwiązań Infrastructure as a service część 1 - Maszyny wirtualne*). Po kliknięciu guzika **Przeglądanie + tworzenie**, zamiast kliknąć guzik **Utwórz** wybieramy **Pobierz szablon do automatyzacji**. Spowoduje to utworzenie plików JSON szablonu i parametrów potrzebnych do wdrożenia opartego na szablonie ARM dla właśnie skonfigurowanej maszyny wirtualnej.
+
+Na tym ekranie w górnym menu możemy kliknąć **Pobierz**, aby pobrać pliki szablonów i parametrów, możemy kliknąć **Dodaj do biblioteki**, aby dodać je do biblioteki w celu dalszych wdrożeń, lub możemy je wdrożyć bezpośrednio z tego miejsca za pomocą guzika **Wdróż**. Dodatkowo możemy zbadać utworzone pliki w oknie poniżej:
+
+![](pic/vm-create-arm-template.png)
+
+**Pliki wygenerowanego szablonu dostępne są tutaj:**
+
+[parameters.json](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/vm-template/parameters.json)
+
+[template.json](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/vm-template/template.json)
+
+
+**Schema:**
 ```json
 "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#"
 ```
 
-ContentVersion:
+**ContentVersion:**
 ```json
 "contentVersion": "1.0.0.0",
 ```
 
 
-Parameters:
+**Parameters:**
 ```json
 "parameters": {
         "location": {
@@ -81,7 +99,7 @@ Parameters:
     }
 ```
 
-Variables:
+**Variables:**
 ```json
 "variables": {
         "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
@@ -90,7 +108,7 @@ Variables:
     }
 ```
 
-Resources:
+**Resources:**
 ```json
 "resources": [
         {
@@ -128,7 +146,7 @@ Resources:
     ]
 ```
 
-Outputs:
+**Outputs:**
 ```json
 "outputs": {
         "adminUsername": {
@@ -138,28 +156,25 @@ Outputs:
     }
 ```
 
-##### Deploying ARM Template:
+
+
+## 5. Demo - wdrożenie szablonu ARM maszyny wirtualnej:
+Plik ze skryptem wdrożenia dostępny jest tutaj: [template.json](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/deploy-win-vm-arm-template-by-azure-powershell.ps1)
+
+Przed wdrożeniem należy ustawić parametr **adminPassword** w pliku **parameters.json**.
 ```powershell
-#Let's login, may launch a browser to authenticate the session.
-Connect-AzAccount -SubscriptionName 'Demonstration Account'
+#Login and set a subscription
+Connect-AzAccount -SubscriptionName 'BizSpark'
+Set-AzContext -SubscriptionName 'BizSpark'
 
 
-#Ensure you're pointed at your correct subscription
-Set-AzContext -SubscriptionName 'Demonstration Account'
+#Create a Resource Group
+New-AzResourceGroup -Name "iaas-demo-rg" -Location "WestEurope"
 
 
-#If you resources already exist, you can use this to remove the resource group
-Remove-AzResourceGroup -Name 'psdemo-rg'
-
-
-#Recreate the Resource Group
-New-AzResourceGroup -Name 'psdemo-rg' -Location 'CentralUS'
-
-
-#We can deploy ARM Templates using the Portal, Azure CLI or PowerShell
-#Make sure to set the adminPassword parameter in parameters.json prior to deployment.
-#Once finished, look for ProvisioningState Succeeded.
+#Deploy ARM Template
 New-AzResourceGroupDeployment `
-    -Name mydeployment -ResourceGroupName 'psdemo-rg' `
-    -TemplateFile './template/template.json' `
-    -TemplateParameterFile './template/parameters.json'
+    -Name mydeployment -ResourceGroupName 'iaas-demo-rg' `
+    -TemplateFile './vm-template/template.json' `
+    -TemplateParameterFile './vm-template/parameters.json'
+```
