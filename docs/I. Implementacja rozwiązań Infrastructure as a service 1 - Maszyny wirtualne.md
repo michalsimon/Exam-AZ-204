@@ -100,8 +100,8 @@ az account set --subscription "<SUBSCRIPTION_NAME>"
 Możemy utworzyć grupę zasobów za pomocą polecenia Azure CLI: `az group create`. Nadajemy tej grupie zasobów nazwę, wybieramy lokalizację w której chcemy utworzyć grupę zasobów. Możemy też oczywiście wdrożyć maszynę wirtualną w już istniejącej grupie zasobów.
 
 ```powershell
-az group create \
---name "iaas-demo-rg" \
+az group create `
+--name "iaas-demo-rg" `
 --location "westeurope"
 ```
 
@@ -114,11 +114,11 @@ Obraz maszyny wirtualnej *Windows 2019 Server Datacenter* to *win2019datacenter*
 Możesz określić rozmiar maszyny wirtualnej za pomocą parametru o nazwie *size*. Jeśli nic nie zostanie wybrane to domyślnie otrzymamy maszynę wirtualną *Standard Ds1 v2*.
 
 ```powershell
-az vm create \
---resource-group "iaas-demo-rg" \
---name "iaas-demo-win" \
---image "win2019datacenter" \
---admin-username "iaasdemoadmin" \
+az vm create `
+--resource-group "iaas-demo-rg" `
+--name "iaas-demo-win" `
+--image "win2019datacenter" `
+--admin-username "iaasdemoadmin" `
 --admin-password "iaasdemoadmin123$%^"
 ```
 
@@ -128,12 +128,12 @@ Jeśli chcemy utworzyć maszynę wirtualną z Linuksem, wzorzec jest bardzo podo
 Możemy zmienić typ uwierzytelniania dla tej maszyny wirtualnej na ssh (domyślnym jest hasło).  Lokalizacja tego klucza pochodzi z pliku na dysku lokalnym.
 
 ```powershell
-az vm create \
---resource-group "iaas-demo-rg" \
---name "iaas-demo-linux" \
---image "UbuntuLTS" \
---admin-username "iaasdemoadmin" \
---authentication-type "ssh" \
+az vm create `
+--resource-group "iaas-demo-rg" `
+--name "iaas-demo-linux" `
+--image "UbuntuLTS" `
+--admin-username "iaasdemoadmin" `
+--authentication-type "ssh" `
 --ssh-key-value ~/.ssh/id_rsa.pub
 ```
 
@@ -146,17 +146,17 @@ To polecenie doda regułę otwierania portu (3389 dla Windows lub 22 dla SSH w L
 
 **Windows:**
 ```powershell
-az vm open-port \
---resource-group "iaas-demo-rg" \
---name "iaas-demo-win" \
+az vm open-port `
+--resource-group "iaas-demo-rg" `
+--name "iaas-demo-win" `
 --port "3389"
 ```
 
 **Linux:**
 ```powershell
-az vm open-port \
---resource-group "iaas-demo-rg" \
---name "iaas-demo-linux" \
+az vm open-port `
+--resource-group "iaas-demo-rg" `
+--name "iaas-demo-linux" `
 --port "22"
 ```
 
@@ -164,8 +164,8 @@ az vm open-port \
 Aby pobrać publiczny adres IP za pomocą Azure CLI używamy polecenia `az vm list-ip-addresses`. Za pomocą tego polecenia określasz nazwę grupy zasobów i nazwę maszyny wirtualnej. Spowoduje to wyświetlenie publicznego adresu IP powiązanego z określoną maszyną wirtualną.
 
 ```powershell
-az vm list-ip-addresses \
---resource-group "iaas-demo-rg" \
+az vm list-ip-addresses `
+--resource-group "iaas-demo-rg" `
 --name "iaas-demo-win"
 ```
 

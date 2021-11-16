@@ -34,7 +34,7 @@ Wewnątrz tego obrazu znajdują się pliki binarne aplikacji i konfiguracja potr
 Po utworzeniu obrazu kontenera można go uruchomić lokalnie jako kontener w celu przetestowania aplikacji. Działający obraz kontenera, można wypchnąć do rejestru kontenerów gdzie będzie dostępny do pobrania dla innych użytkowników.
 
 ### Przykładowy plik Dockerfile tworzony przez Visual Studio
-Plik **Dockerfile** używany przez program *Visual Studio* jest podzielony na wiele etapów. Ten proces opiera się na funkcji wieloetapowej kompilacji platformy Docker.
+Plik **Dockerfile** używany przez program *Visual Studio* jest podzielony na wiele etapów. Ten proces opiera się na funkcji wieloetapowej kompilacji platformy *Docker*.
 
 Funkcja kompilacji wieloetapowej pomaga zwiększyć wydajność procesu kompilowania kontenerów i zmniejsza kontenery, pozwalając im zawierać tylko te fragmenty, których aplikacja potrzebuje w czasie wykonywania.
 
@@ -149,5 +149,83 @@ docker rm dockerwebapp
 
 ## 2. Publikacja obrazów w Azure Container Registry
 
+### Azure Container Registry (ACR)
+**Azure Container Registry** to zarządzana usługa **Docker Registry**, która umożliwia tworzenie i przechowywanie oraz zarządzanie obrazami kontenerów. 
+**ACR** może być podstawowym składnikiem potoku *CI/CD*. Można go zintegrować z systemami kontroli wersji (np. *Git*) i tworzyć obrazy kontenerów po zatwierdzeniu kodu. 
+
+Ponadto usuługi orkiestrujące kontenery jak np **Kubernetes** czy **Azure Container Instances** mogą zostać skonfigurowane do pobierania obrazów z **Azure Container Registry**. 
+
+Ponadto można użyć zadań **Azure Container Registry** aby usprawnić tworzenie, testowanie, wypychanie i wdrażanie obrazów na platformie **Azure**. **ACR Tasks** wykonuje proces kompilacji obrazu w **Azure Container Registry** i może zostać wyzwolony w celu zbudowania obrazu kontenera, gdy kod źródłowy aplikacji zostanie zatwierdzony w systemie kontroli wersji. Po zakończeniu zadania obraz zostanie automatycznie przesłany do **ACR**.
+Istnieje kilka poziomów wersji usługi **ACR**. Obecne poziomy usługi to **Basic**, **Standard** i **Premium**. Im wyższa wersja tym większa wydajność, przepustowość obrazu, pojemność magazynu, a także funkcje zabezpieczeń i replikacji. Więcej na ten temat na stronie [Azure Container Registry service tiers](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-skus).
+
+### Uwierzytelnianie ACR
+**Azure Container Registry** wymaga uwierzytelniania dla wszystkich operacji i obsługuje kilka typów uwierzytelniania tożsamości, z których każdy ma zastosowanie do innego scenariusza użycia rejestru.
+Wszystkie typy uwierzytelniania dostępne są na stronie [Authenticate with an Azure container registry](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-authentication?tabs=azure-cli).
+
+Rekomendowanym sposobem uwierzytelnienia jest uwierzytelnienie z użyciem indywidualnego loginu lub za pomocą uwierzytelniania beznagłówkowego (ang. headless authentication), które używają usługi **Azure Active Directory Identities**. 
+Istnieje również specyficzne dla usługi konto administratora **ACR**, które jest domyślnie wyłączonym kontem administracyjnym i jest potrzebne tylko w niektórych scenariuszach.
+
+Podczas tworzenia potoków CI/CD, orkiestratorów kontenerów i innych narzędzi automatyzacji powinno się używać tak zwanego uwierzytelniania beznagłówkowego (ang. headless authentication).
+
+Jako deweloper, aby zalogować się do **Azure Container Registry**, można użyć logowania **AZ ACR** lub loginu platformy *Docker* z wiersza polecenia. Po zalogowaniu loginem i hasłem usługi **Azure AD Identity** można wykonywać operacje na które pozwala kontrola dostępu oparta na rolach.
+
+Lista wbudowanych ról w **Azure Container Registry** dostępna jest na stronie [Azure Container Registry roles and permissions](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-roles?tabs=azure-cli).
+
+Role te zwykle przypisujemy do osób lub narzędzi. Zwykle role **Owner**, **Contributor** i **Reader** są przypisywane użytkownikom ponieważ mają dostęp zarówno do **ACR** jako zasobu platformy Azure, jak i do administrowania lub uzyskiwania dostępu do jego konfiguracji oraz dostęp do zawartości samego rejestru.
+Role **AcrPush**, **AcrPull** i **AcrDelete** zwykle przypisujemy do narzędzi automatyzacji. Mają one dostęp tylko do danych rejestru kontenerów.
+
+### Tworzenie i logowanie do ACR
+Rejest **ACR** możemy utworzyć za pomocą zwykłych narzędzi narzędzi do wdrażania np. **Azure Portal**, **Azure PowerShell** lub **Azure CLI**.
+
+Tworzenie rejestru **ACR** odbywa się z użyciem polecenia `az acr create` które jako parametry wejściowe pobiera nazwę grupy zasobów, nazwę rejestru która musi być unikalna na platformie Azure oraz SKU. 
+
+Aby zalogować się do utworzonego rejestru kontenerów używamy polecenia `az acr login`z nazwą rejestru jako parametrem. Spowoduje to zalogowanie się przy użyciu bieżących poświadczeń wiersza polecenia platformy Azure w bieżącej sesji, które będą miały dostęp administracyjny do rejestru kontenerów od momentu jego utworzenia.
+
+```powershell
+#ACR registry name environment variable
+$ACR_REGISTRY_NAME='iaasdemoacr' 
+
+az acr create `
+--resource-group iaas-demo-rg `
+--name $ACR_REGISTRY_NAME `
+--sku Standard
+
+az acr login --name $ACR_REGISTRY_NAME
+```
+
+### Wypychanie obrazu do ACR
+Po zbudowaniu obrazu kontenera na lokalnej stacji roboczej i wdrożeniu rejestru kontenerów **ACR**, możemy wypchnąć obraz kontenera do rejestru. Można do tego użyć narzędzi *Docker* lub **ACR Tasks**.
+
+#### Wypychanie obrazu do ACR za pomocą narzędzi Docker
+Aby użyć narzędzi Docker musimy pierw uzyskać publiczną nazwę DNS dla naszego rejestru **ACR**. Możemy to pobrać w portalu Azure lub z wiersza polecenia za pomocą polecenia `az acr show` z nazwą rejestru jako parametrem wejściowym. Aby wyodrębnić pole *loginServer* używamy parametr `--query loginServer`.
+
+Następnie nadajemy alias lokalnemu obrazowi przy użyciu polecenia `docker tag`. Jako parametry podajemy lokalny obraz kontenera i docelowy alias dla tego obrazu. 
+Po nadaniu aliasu wypychamy obraz do rejestru za pomocą polecenia `docker push` używając aliasu obrazu docelowego jako parametru.
+
+```powershell
+#ACR registry name environment variable
+$ACR_REGISTRY_NAME='iaasdemoacr' 
+
+$ACR_LOGINSERVER=$(az acr show --name $ACR_REGISTRY_NAME --query loginServer --output tsv) echo $ACR_LOGINSERVER #iaasdemoacr.azurecr.io
+
+docker tag dockerwebapp:v1 $ACR_LOGINSERVER/dockerwebapp:v1
+docker push $ACR_LOGINSERVER/dockerwebapp:v1
+```
+
+#### Wypychanie obrazu do ACR za pomocą ACR Tasks
+Użycie zadania **ACR Task** do zbudowania naszego obrazu spowoduje odczytanie pliku **Dockerfile** oraz spakowanie wszystkich zasobów i kodu, a następnie przesłanie ich do **ACR** w celu zbudowania obrazu.
+Służy do tego polecenie `az acr build` z parametrem *‑‑image* i `--registry`. Kropka na końcu polecenia odnosi się do lokalnego pliku **Dockerfile** w bieżącym katalogu roboczym.
+
+```powershell
+#ACR registry name environment variable
+$ACR_REGISTRY_NAME='iaasdemoacr' 
+
+#Build using ACR Tasks
+az acr build --image "dockerwebapp:v1-acr-task" --registry $ACR_REGISTRY_NAME .
+```
+
+### Kod demo:
+Plik ze skryptem wdrożenia ACR dostępny jest tutaj:
+[create-acr-by-azure-cli](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/create-acr-by-azure-cli.ps1)
 
 ## 3. Uruchamianie kontenerów za pomocą Azure Container Instance
