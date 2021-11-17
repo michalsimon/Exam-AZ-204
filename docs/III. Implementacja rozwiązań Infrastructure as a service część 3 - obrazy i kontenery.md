@@ -229,3 +229,85 @@ Plik ze skryptem wdrożenia ACR dostępny jest tutaj:
 [create-acr-by-azure-cli](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/create-acr-by-azure-cli.ps1)
 
 ## 3. Uruchamianie kontenerów za pomocą Azure Container Instance
+
+**Azure Container Instances** to bezserwerowa platforma, która umożliwia uruchamianie kontenerów na platformie Azure bez konieczności konfigurowania jakichkolwiek maszyn wirtualnych lub innej infrastruktury. Najczęściej jest używana do prostych aplikacji i automatyzacji zadań. 
+Po wdrażaniu kontenera w **ACI** aplikacja jest dostępnaza pośrednictwem automatycznie aprowizowanej, w pełni kwalifikowanej nazwy domenowej. Opcjonalnie kontenery wdrożone w **ACI** można połączyć bezpośrednio z siecią wirtualną platformy Azure w celu zapewnienia prywatnej, bezpiecznej komunikacji. 
+
+Podczas definiowania kontenerów w **ACI** można określić ilość procesora lub pamięci potrzebnej do uruchomienia aplikacji. Domyślnie jest to 1 rdzeń i 1,5 GB pamięci RAM. Kontenery **ACI** mogą bezpośrednio instalować udziały plików **Azure Storage**.
+
+**Azure Container Instances** obsługuje również łączenie kontenerów, które współużytkują maszynę hosta, sieć lokalną, magazyn danych i cykl życia. Umożliwia to łączenie głównego kontenera aplikacji z innymi kontenerami (ang. sidecar), w celu konstruowania bardziej złożonych scenariuszy aplikacji.
+
+**ACI** umożliwia także na ustawienie zasad ponownego uruchamiania kontenera jeśli aplikacja działająca w kontenerze zostanie zatrzymana. Dostępne opcje to: zawsze restartuj, restartuj w przypadku niepowodzenia i nie restartuj nigdy. Domyślną opcją jest restartuj zawsze.
+
+Kontenery **ACI** można wdrażać z **Azure Container Registry**, a także z dowolnego rejestru kontenerów zgodnego z platformą **Docker**, w tym z **Docker Hub**. Podczas wdrażania kontenerów można używać zarówno publicznych, jak i prywatnych rejestrów kontenerów.
+
+Prywatny rejestr kontenerów to taki, który wymaga uwierzytelnienia lub nie jest bezpośrednio połączony z Internetem. **ACR** domyślnie wymaga uwierzytelniania. Podczas wdrażania kontenera z **ACR** musimy poinformować **ACI** o lokalizacji sieciowej serwera logowania naszego rejestru  i sposobie uwierzytelniania.
+
+### Uwierzytelnianie usługi ACI do rejestru pobrania obrazów z ACR
+Pierw definiujemy zmienną `$ACR_REGISTRY_NAME` która jest aktualną nazwą utworzonego wcześniej rejestru **ACR**, oraz zmienną `$SERVICE_PRINCIPAL_NAME` która jest nazwą użytkownika dla usługi **ACI**.
+
+Następnie pobieramy identyfikator tego rejestru do zmiennej `$ACR_REGISTRY_ID` za pomocą polecenia `az acr show --name $ACR_REGISTRY_NAME --query id --output tsv`.
+Następnie używamy polecenia `az ad sp create‑for‑rbac` do utworzenia użytkownika usługi po czym pobieramy jego hasło i zapisujemy do zmiennej `$SERVICE_PASSWD`. Tego hasła będziemu używali do dostępu do **ACR**. Parametrami tego polecenia są: `--name` oznaczający nazwę użytkownika dla usługi,`--scopes` oznaczający zakres dostępu i `--role` oznaczający rolę kontroli dostępu.
+
+Następnie musimy uzyskać identyfikator aplikacji dla usługi **ACI**, którego będziemy używać jako nazwy użytkownika podczas uwierzytelniania w naszym **ACR**. Możemy to zrobić za pomocą polecenia `az ad sp list` z parametrem `--display-name` którego wartością jest nazwą użytkownika dla usługi **ACI**. Używając parametru zapytania uzyskujemy identyfikator aplikacji który zapisujemy do zmiennej `$SERVICE_PRINCIPAL_APPID`.
+
+Pełny opis tworzenia użytkownika dla usługi **ACI** znajduje się na stronie [Azure Container Registry authentication with service principals](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal).
+
+```powershell
+# ACR_REGISTRY_NAME: The name of your Azure Container Registry
+$ACR_REGISTRY_NAME='iaasdemoacr'
+# SERVICE_PRINCIPAL_NAME: Must be unique within your AD tenant
+$SERVICE_PRINCIPAL_NAME='acr-service-user'
+
+# Obtain the full registry ID for subsequent command args
+$ACR_REGISTRY_ID=$(az acr show --name $ACR_REGISTRY_NAME --query id --output tsv)
+
+# Create the service principal with rights scoped to the registry.
+# Default permissions are for docker pull access. Modify the '--role'
+# argument value as desired:
+# acrpull:     pull only
+# acrpush:     push and pull
+# owner:       push, pull, and assign roles
+$SERVICE_PRINCIPAL_PASSWORD=$(az ad sp create-for-rbac `
+--name $SERVICE_PRINCIPAL_NAME `
+--scopes $ACR_REGISTRY_ID `
+--role acrpull `
+--query password `
+--output tsv)
+
+$SERVICE_PRINCIPAL_APPID=$(az ad sp list `
+--display-name $SERVICE_PRINCIPAL_NAME `
+--query "[].appId" `
+--output tsv)
+
+# Output the service principal's credentials; use these in your services and
+# applications to authenticate to the container registry.
+echo "Service principal ID: $SERVICE_PRINCIPAL_APPID"
+echo "Service principal password: $SERVICE_PRINCIPAL_PASSWORD"
+```
+
+### Uruchamianie obrazu kontenera z ACR w ACI
+Pierw definiujemy zmienną `$ACR_REGISTRY_NAME` która jest aktualną nazwą utworzonego wcześniej rejestru **ACR**, oraz zmienną `$ACR_LOGINSERVER` która jest lokalizacją sieciową rejestru **ACR** z obrazami kontenerów.
+
+Tworzenie kontenera w **ACI** odbywa się przy użyciu poecenia `az container create` dla którego określamy grupę zasobów, nazwę kontenera, nazwę hosta dla kontenera, porty, ścieżkę do lokalizacji obrazu kontenera w **ACR** i sposób uwierzytelnienia a w tym serwer logowania, nazwa użytkownika i hasło. 
+
+```powershell
+# ACR_REGISTRY_NAME: The name of your Azure Container Registry
+$ACR_REGISTRY_NAME='iaasdemoacr'
+
+#Get the loginServer 
+$ACR_LOGINSERVER=$(az acr show --name $ACR_REGISTRY_NAME --query loginServer --output tsv)
+
+az container create `
+--resource-group iaas-demo-rg `
+--name iaas-demo-dockerwebapp `
+--dns-name-label iaas-demo-dockerwebapp `
+--ports 80 `
+--image $ACR_LOGINSERVER/dockerwebapp:v1 `
+--registry-login-server $ACR_LOGINSERVER `
+--registry-username $SERVICE_PRINCIPAL_APPID `
+--registry-password $SERVICE_PRINCIPAL_PASSWORD
+```
+
+### Kod demo:
+Plik ze skryptem uruchamiania kontenerów za pomocą **ACI** dostępny jest tutaj: [deploy-acr-image-in-aci-by-azure-cli](https://github.com/michalsimon/Exam-AZ-204/blob/main/src/IaaS/deploy-acr-image-in-aci-by-azure-cli.ps1)
